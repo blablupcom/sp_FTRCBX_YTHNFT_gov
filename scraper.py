@@ -8,6 +8,8 @@ import scraperwiki
 import urllib2
 from datetime import datetime
 from bs4 import BeautifulSoup
+import urllib3
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 #### FUNCTIONS 1.1
 import requests
@@ -38,19 +40,19 @@ def validateFilename(filename):
 
 def validateURL(url):
     try:
-        r = urllib2.urlopen(url)
+        r = requests.get(url, verify=False)
         count = 1
-        while r.getcode() == 500 and count < 4:
+        while r.status_code == 500 and count < 4:
             print ("Attempt {0} - Status code: {1}. Retrying.".format(count, r.status_code))
             count += 1
-            r = urllib2.urlopen(url)
+            r = requests.get(url, verify=False)
         sourceFilename = r.headers.get('Content-Disposition')
 
         if sourceFilename:
             ext = os.path.splitext(sourceFilename)[1].replace('"', '').replace(';', '').replace(' ', '')
         else:
             ext = os.path.splitext(url)[1]
-        validURL = r.getcode() == 200
+        validURL = r.status_code == 200
         validFiletype = ext.lower() in ['.csv', '.xls', '.zip', '.xlsx', '.pdf']
         return validURL, validFiletype
     except:
@@ -102,7 +104,7 @@ soup = BeautifulSoup(html.text, 'lxml')
 blocks = soup.find('div', 'col1').find_all('a')
 for block in blocks:
     link = block['href']
-    url = link.replace('../../..', 'https://www.yorkhospitals.nhs.uk')
+    url = 'https://www.yorkhospitals.nhs.uk'+link
     csvMth = block.text.split()[0][:3]
     csvYr = block.text.split()[-1]
     csvMth = convert_mth_strings(csvMth.upper())
